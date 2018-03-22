@@ -1,59 +1,61 @@
+#include <unistd.h> 
+#include <stdlib.h> 
+#include <string.h> 
+#include <sys/types.h> 
+#include <sys/wait.h>
 #include <stdio.h>
-#include <unistd.h>
-#include <sys/types.h>
-#include <stdlib.h>
 
 #define READ 0
 #define WRITE 1
 
 int main(void){
-
-	int fd[2];
-	pid_t pid;
-
-	pipe(fd);
-
-	pid = fork();
-
+	pid_t pid, w;
+	int fd1[2], fd2[2];
 	int status;
 
-	if(pid > 0) //Processo pai;
-	{
+	pipe(fd1);
+	pipe(fd2);
+	pid = fork();
+
+	if(pid > 0){
 		int a[2];
-		int rf[4];
-		printf("Parent: (Usage: int int) \n");
-		printf("x y ?");
-		scanf("%d %d", &a[0], &a[1]);
-		close(fd[READ]);
-		write(fd[WRITE],a,2*sizeof(int));;
-		close(fd[WRITE]);
+		int op[4];
+		printf("Parent: x y ?\n");
+		scanf("%d and %d", &a[0], &a[1]);
+		close(fd1[READ]); 
+		close(fd2[WRITE]);
 
-		wait(pid, &status, WNOHANG);
+		write(fd1[WRITE], a, 2*sizeof(int));
+		close(fd1[WRITE]);
 
-		read(fd[READ], rf, 4*sizeof(int));
-		printf("Soma: %d", rf[0]);
-		printf("Sub: %d", rf[0]);
-		printf("Mult: %d", rf[0]);
-		printf("DIV: %d", rf[0]);
-		close(fd[READ]);
+		w = wait(&status);
 
+		read(fd2[READ], op, 4*sizeof(int));
+		
+		printf("My son calculated: \n");
+		printf("Soma = %d\n", op[0]);
+		printf("Mult = %d\n", op[1]);
+		printf("Dif = %d\n", op[2]);
+		printf("Invalid Operation.");
 
-	}
-	else //filho
-	{
+		close(fd2[READ]);
+
+	}else{
 		int b[2];
-		int r[4];
-		close(fd[WRITE]);
-		read(fd[READ], b, 2*sizeof(int));
-		close(fd[READ]);
+		int c[4];
+		close(fd1[WRITE]); 
 
-		r[0] = b[0] + b[1];
-		r[1] = b[0] - b[1];
-		r[2] = b[0] * b[1];
-		r[3] = b[0] / b[1];
+		close(fd2[READ]);
+		read(fd1[READ], b, 2*sizeof(int));
 
-		write(fd[WRITE], r, 4*sizeof(int));
-		close(fd[WRITE]);
+			c[0] = b[0] + b[1];
+			c[1] = b[0] * b[1];
+			c[2] = b[0] - b[1];
+			c[3] = b[0] / b[1];
+		
+		write(fd2[WRITE], c, 4*sizeof(int));
+		close(fd2[WRITE]);
+		close(fd1[READ]);
 	}
 	return 0;
-}	
+}
